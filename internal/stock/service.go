@@ -19,7 +19,7 @@ func (s *Service) ensureToken(ctx context.Context) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Re-login cada 55 min (o ajusta según exp del JWT)
+	// Re-login cada 55 min
 	if time.Since(s.tokenFetched) < 55*time.Minute && s.token != "" {
 		return s.token, nil
 	}
