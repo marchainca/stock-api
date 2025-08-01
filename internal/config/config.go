@@ -1,34 +1,66 @@
+// Package config centraliza la carga y validación de variables de entorno.
 package config
 
 import (
-	"log"
+	"fmt"
 	"os"
+	"strings"
+
+	"github.com/joho/godotenv"
 )
 
+// Config agrupa toda la configuración necesaria para arrancar el servicio.
 type Config struct {
-	BaseURL  string
-	User     string
-	Password string
-	Port     string
+	Port string
+	Env  string // p.ej. development | staging | production
+
+	API struct {
+		BaseURL  string
+		User     string
+		Password string
+	}
 }
 
-func Load() Config {
-	cfg := Config{
-		BaseURL:  getEnv("API_BASE_URL", "https://api.karenai.click/swechallenge"),
-		User:     os.Getenv("API_USER"),
-		Password: os.Getenv("API_PASSWORD"),
-		Port:     getEnv("PORT", "8580"),
+// Load lee .env, .env.<ENV> (si existe) y devuelve una Config validada.
+// Si falta alguna variable obligatoria, retorna error.
+func Load() (Config, error) {
+	// 1) Carga el archivo base .env (ignora error si no existe).
+	_ = godotenv.Load()
+
+	// 2) Identifica el entorno (puede venir del .env recién cargado).
+	env := os.Getenv("ENV")
+
+	// 3) Sobrecarga con .env.<ENV> si corresponde (anula/añade variables).
+	if env != "" {
+		_ = godotenv.Overload(".env." + env) // también ignora si no existe
 	}
 
-	if cfg.User == "" || cfg.Password == "" {
-		log.Fatal("API_USER and API_PASSWORD must be set")
+	var cfg Config
+	cfg.Env = env // podría quedar vacío si no se definió
+
+	// 4) Variables obligatorias
+	var err error
+
+	if cfg.Port, err = required("PORT"); err != nil {
+		return cfg, err
 	}
-	return cfg
+	if cfg.API.BaseURL, err = required("API_BASE_URL"); err != nil {
+		return cfg, err
+	}
+	if cfg.API.User, err = required("API_USER"); err != nil {
+		return cfg, err
+	}
+	if cfg.API.Password, err = required("API_PASSWORD"); err != nil {
+		return cfg, err
+	}
+
+	return cfg, nil
 }
 
-func getEnv(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+// required devuelve el valor de la variable o un error si está ausente o vacía.
+func required(key string) (string, error) {
+	if v, ok := os.LookupEnv(key); ok && strings.TrimSpace(v) != "" {
+		return v, nil
 	}
-	return def
+	return "", fmt.Errorf("config: env var %s is required", key)
 }
