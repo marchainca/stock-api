@@ -19,18 +19,25 @@ type Config struct {
 		User     string
 		Password string
 	}
+
+	// --- Base de datos ---
+	DBHost string
+	DBPort string
+	DBUser string
+	DBPass string
+	DBName string
 }
 
 // Load lee .env, .env.<ENV> (si existe) y devuelve una Config validada.
 // Si falta alguna variable obligatoria, retorna error.
 func Load() (Config, error) {
-	// 1) Carga el archivo base .env (ignora error si no existe).
+	// Cargar el archivo base .env.
 	_ = godotenv.Load()
 
-	// 2) Identifica el entorno (puede venir del .env recién cargado).
+	// Identificar el entorno.
 	env := os.Getenv("ENV")
 
-	// 3) Sobrecarga con .env.<ENV> si corresponde (anula/añade variables).
+	// Sobrecarga con .env.<ENV> si corresponde anula/añade variables.
 	if env != "" {
 		_ = godotenv.Overload(".env." + env) // también ignora si no existe
 	}
@@ -38,7 +45,7 @@ func Load() (Config, error) {
 	var cfg Config
 	cfg.Env = env // podría quedar vacío si no se definió
 
-	// 4) Variables obligatorias
+	// Variables obligatorias
 	var err error
 
 	if cfg.Port, err = required("PORT"); err != nil {
@@ -51,6 +58,21 @@ func Load() (Config, error) {
 		return cfg, err
 	}
 	if cfg.API.Password, err = required("API_PASSWORD"); err != nil {
+		return cfg, err
+	}
+	if cfg.DBHost, err = required("DB_HOST"); err != nil {
+		return cfg, err
+	}
+	if cfg.DBPort, err = required("DB_PORT"); err != nil {
+		return cfg, err
+	}
+	if cfg.DBUser, err = required("DB_USER"); err != nil {
+		return cfg, err
+	}
+	if cfg.DBPass, err = required("DB_PASS"); err != nil {
+		return cfg, err
+	}
+	if cfg.DBName, err = required("DB_NAME"); err != nil {
 		return cfg, err
 	}
 
