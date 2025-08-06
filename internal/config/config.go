@@ -24,7 +24,7 @@ type Config struct {
 // Load lee .env, .env.<ENV> (si existe) y devuelve una Config validada.
 // Si falta alguna variable obligatoria, retorna error.
 func Load() (Config, error) {
-	// 1) Carga el archivo base .env (ignora error si no existe).
+	// 1) Carga el archivo base .env.
 	_ = godotenv.Load()
 
 	// 2) Identifica el entorno (puede venir del .env recién cargado).
