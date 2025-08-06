@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -16,15 +17,12 @@ type Client struct {
 	httpc    *http.Client
 }
 
-func NewClient(baseURL, user, pass string) *Client {
-	return &Client{
-		baseURL:  baseURL,
-		user:     user,
-		password: pass,
-		httpc: &http.Client{
-			Timeout: 10 * time.Second,
-		},
+func NewClient(baseURL, user, pass string, hc *http.Client) *Client {
+	if hc == nil {
+		hc = &http.Client{Timeout: 10 * time.Second}
 	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	return &Client{baseURL: baseURL, user: user, password: pass, httpc: hc}
 }
 
 // Login obtiene un JWT y lo devuelve.
@@ -63,7 +61,7 @@ func (c *Client) Login(ctx context.Context) (string, error) {
 	return lr.Token, nil
 }
 
-// List trae los ítems. `cursor` es el ticker del último elemento (vacío = primera página)
+// List trae los ítems.
 func (c *Client) List(ctx context.Context, token, cursor string) (listResponse, error) {
 	url := fmt.Sprintf("%s/list?next_page=%s", c.baseURL, cursor)
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

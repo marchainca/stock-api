@@ -20,6 +20,7 @@ func (s *Service) ensureToken(ctx context.Context) (string, error) {
 	defer s.mu.Unlock()
 
 	// Re-login cada 55 min
+	const tokenTTL = 55 * time.Minute
 	if time.Since(s.tokenFetched) < 55*time.Minute && s.token != "" {
 		return s.token, nil
 	}
